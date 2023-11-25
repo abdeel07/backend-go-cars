@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"github.com/abdeel07/backend-go-cars/model"
 	"github.com/abdeel07/backend-go-cars/server"
@@ -37,6 +36,16 @@ func AddCar(s *server.Server) http.HandlerFunc {
 		if exists {
 			w.WriteHeader(http.StatusConflict)
 			json.NewEncoder(w).Encode(map[string]string{"error": "Car already exists"})
+			return
+
+		} else if car.Mileage < 0 {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Mileage parameter must be positive"})
+			return
+
+		} else if car.CarModel == "" || car.Registration == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Car model and registration are required"})
 			return
 		}
 
@@ -84,8 +93,9 @@ func ReturnCar(s *server.Server) http.HandlerFunc {
 		params := mux.Vars(r)
 		registration := params["registration"]
 
-		var kilometersParam string
-		json.NewDecoder(r.Body).Decode(&kilometersParam)
+		type KilometersPayload struct {
+			Kilometers float64 `json:"kilometers"`
+		}
 
 		exists, car := s.ParkingLotService.IsExist(registration)
 
@@ -101,15 +111,20 @@ func ReturnCar(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		kilometers, err := strconv.Atoi(kilometersParam)
-		if err != nil {
+		var payload KilometersPayload
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"error": "Invalid kilometers parameter"})
+			json.NewEncoder(w).Encode(map[string]string{"error": "Invalid kilometers payload"})
+			return
+
+		} else if payload.Kilometers < 0 {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Kilometers parameter must be positive"})
 			return
 		}
 
 		car.Available = true
-		car.Mileage += int(kilometers)
+		car.Mileage += float64(payload.Kilometers)
 		s.ParkingLotService.DB.Save(&car)
 
 		json.NewEncoder(w).Encode(car)

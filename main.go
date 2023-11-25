@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"fmt"
 	"net/http"
 
 	"github.com/abdeel07/backend-go-cars/routes"
@@ -15,7 +15,7 @@ func main() {
 
 	db, err := service.InitializeDB("root:@tcp(127.0.0.1:3306)/parking_lot?charset=utf8&parseTime=True&loc=Local")
 	if err != nil {
-		log.Fatal("Error initializing database:", err)
+		fmt.Println("Error initializing database:", err)
 	}
 
 	service.MigrateDB(db)
@@ -25,5 +25,5 @@ func main() {
 	routes.SetupRoutes(router, parkingLotServer)
 
 	http.ListenAndServe(":8080", router)
-	log.Println("Server started on port 8080")
+	fmt.Println("Server started on port 8080")
 }
