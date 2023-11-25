@@ -1,7 +1,29 @@
 package main
 
-import "fmt"
+import (
+	"log"
+	"net/http"
+
+	"github.com/abdeel07/backend-go-cars/routes"
+	"github.com/abdeel07/backend-go-cars/server"
+	"github.com/abdeel07/backend-go-cars/service"
+	"github.com/gorilla/mux"
+)
 
 func main() {
-	fmt.Println("Hello, World!")
+	router := mux.NewRouter()
+
+	db, err := service.InitializeDB("root:@tcp(127.0.0.1:3306)/parking_lot?charset=utf8&parseTime=True&loc=Local")
+	if err != nil {
+		log.Fatal("Error initializing database:", err)
+	}
+
+	service.MigrateDB(db)
+
+	parkingLotServer := server.NewServer(db)
+
+	routes.SetupRoutes(router, parkingLotServer)
+
+	http.ListenAndServe(":8080", router)
+	log.Println("Server started on port 8080")
 }
