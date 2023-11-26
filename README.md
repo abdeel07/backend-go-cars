@@ -49,6 +49,6 @@ Create 2 MySQL database
 ## Test the API
 
 ```sh
-cd cd handlers_test/
+cd handlers_test/
 go test
 ```
