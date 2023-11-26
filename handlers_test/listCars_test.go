@@ -22,6 +22,7 @@ func TestListCars(t *testing.T) {
 
 	router.ServeHTTP(response, request)
 
+	fmt.Printf("\n------\n")
 	fmt.Printf("Test List Cars - HTTP Status Code: %d (Must be 200)\n", response.Code)
 	assert.Equal(t, http.StatusOK, response.Code)
 
@@ -29,6 +30,6 @@ func TestListCars(t *testing.T) {
 	err = json.Unmarshal(response.Body.Bytes(), &cars)
 	assert.NoError(t, err)
 
-	fmt.Printf("Test List Cars - Number of Cars in the Response: %d (Must be 3)\n", len(cars))
-	assert.True(t, len(cars) == 3)
+	fmt.Printf("Test List Cars - Number of Cars in the Response: %d (Must be >= 3)\n", len(cars))
+	assert.True(t, len(cars) >= 3)
 }

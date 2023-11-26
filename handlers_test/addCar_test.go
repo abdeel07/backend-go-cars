@@ -33,6 +33,7 @@ func TestAddCar(t *testing.T) {
 
 	router.ServeHTTP(response, request)
 
+	fmt.Printf("\n------\n")
 	fmt.Printf("Test Add Car - HTTP Status Code: %d (Must be 201)\n", response.Code)
 	assert.Equal(t, http.StatusCreated, response.Code)
 
@@ -63,6 +64,7 @@ func TestAddCar2(t *testing.T) {
 
 	response := httptest.NewRecorder()
 
+	fmt.Printf("\n")
 	fmt.Printf("Test Add Car 2 - With deplicate Registration\n")
 
 	router.ServeHTTP(response, request)

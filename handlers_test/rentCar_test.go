@@ -21,6 +21,7 @@ func TestRentCar(t *testing.T) {
 
 	router.ServeHTTP(response, request)
 
+	fmt.Printf("\n------\n")
 	fmt.Printf("Test Rent Car - HTTP Status Code: %d (Must be 200)\n", response.Code)
 	assert.Equal(t, http.StatusOK, response.Code)
 
@@ -43,6 +44,7 @@ func TestRentCar2(t *testing.T) {
 
 	response := httptest.NewRecorder()
 
+	fmt.Printf("\n")
 	fmt.Printf("Test Rent Car 2 - With Car already rented\n")
 	router.ServeHTTP(response, request)
 
@@ -59,6 +61,7 @@ func TestRentCar3(t *testing.T) {
 
 	response := httptest.NewRecorder()
 
+	fmt.Printf("\n")
 	fmt.Printf("Test Rent Car 3 - With Car not exist\n")
 	router.ServeHTTP(response, request)
 
