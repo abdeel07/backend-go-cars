@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/abdeel07/backend-go-cars/model"
@@ -14,10 +15,12 @@ type ParkingLotService struct {
 }
 
 func (s *ParkingLotService) IsExist(registration string) (bool, model.Car) {
+
 	var car model.Car
 	result := s.DB.First(&car, "registration = ?", registration)
 
 	if result.Error != nil {
+		fmt.Printf("Record not found for registration '%s'\n", registration)
 		return false, model.Car{}
 	}
 

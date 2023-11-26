@@ -9,6 +9,11 @@ import (
 	"github.com/gorilla/mux"
 )
 
+type CarResponse struct {
+	Message string    `json:"message"`
+	Car     model.Car `json:"car"`
+}
+
 func ListCars(s *server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -32,6 +37,18 @@ func AddCar(s *server.Server) http.HandlerFunc {
 			return
 		}
 
+		if car.Mileage < 0 {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(ErrorResponse{"Mileage parameter must be positive"})
+			return
+
+		}
+		if car.CarModel == "" || car.Registration == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(ErrorResponse{"Car model and registration are required"})
+			return
+		}
+
 		exists, _ := s.ParkingLotService.IsExist(car.Registration)
 
 		if exists {
@@ -39,15 +56,6 @@ func AddCar(s *server.Server) http.HandlerFunc {
 			json.NewEncoder(w).Encode(ErrorResponse{"Car already exists"})
 			return
 
-		} else if car.Mileage < 0 {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(ErrorResponse{"Mileage parameter must be positive"})
-			return
-
-		} else if car.CarModel == "" || car.Registration == "" {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(ErrorResponse{"Car model and registration are required"})
-			return
 		}
 
 		car.Available = true
@@ -85,8 +93,13 @@ func RentCar(s *server.Server) http.HandlerFunc {
 		car.Available = false
 		s.ParkingLotService.DB.Save(&car)
 
+		response := CarResponse{
+			Message: "The Car with registration " + registration + " is rented!",
+			Car:     car,
+		}
+
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode("The Car with registration " + registration + " is rented!")
+		json.NewEncoder(w).Encode(response)
 	}
 }
 
@@ -98,6 +111,19 @@ func ReturnCar(s *server.Server) http.HandlerFunc {
 
 		type KilometersPayload struct {
 			Kilometers float64 `json:"kilometers"`
+		}
+
+		var payload KilometersPayload
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(ErrorResponse{"Invalid kilometers payload"})
+			return
+
+		}
+		if payload.Kilometers < 0 {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(ErrorResponse{"Kilometers parameter must be positive"})
+			return
 		}
 
 		exists, car := s.ParkingLotService.IsExist(registration)
@@ -114,24 +140,17 @@ func ReturnCar(s *server.Server) http.HandlerFunc {
 			return
 		}
 
-		var payload KilometersPayload
-		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(ErrorResponse{"Invalid kilometers payload"})
-			return
-
-		} else if payload.Kilometers < 0 {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(ErrorResponse{"Kilometers parameter must be positive"})
-			return
-		}
-
 		car.Available = true
 		car.Mileage += float64(payload.Kilometers)
 		s.ParkingLotService.DB.Save(&car)
 
+		response := CarResponse{
+			Message: "The Car with registration " + registration + " is returned!",
+			Car:     car,
+		}
+
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(car)
+		json.NewEncoder(w).Encode(response)
 	}
 }
 
