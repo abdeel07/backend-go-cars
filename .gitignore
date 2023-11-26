@@ -1,11 +1,5 @@
 # Binaries
 *.exe
-*.dll
-*.so
-*.dylib
-
-# Log files
-*.log
 
 # VS Code config folder
 .vscode/

@@ -1,0 +1,47 @@
+go test
+
+2023/11/26 21:08:58 C:/Users/AbdeelBrh/Desktop/IT/Go Lang/backend-go-cars/service/parkingLotService.go:20 record not found
+[0.525ms] [rows:0] SELECT * FROM `cars` WHERE registration = 'New Registration' AND `cars`.`deleted_at` IS NULL ORDER BY `cars`.`id` LIMIT 1
+Record not found for registration 'New Registration'
+
+------
+Test Add Car - HTTP Status Code: 201 (Must be 201)  
+Test Add Car - Car Availability: true (Must be true)
+
+Test Add Car 2 - With deplicate Registration        
+Test Add Car 2 - HTTP Status Code: 409 (Must be 409)
+
+------
+Test List Cars - HTTP Status Code: 200 (Must be 200)
+Test List Cars - Number of Cars in the Response: 4 (Must be >= 3)
+
+------
+Test Rent Car - HTTP Status Code: 200 (Must be 200)    
+Test Rent Car - Car Availability: false (Must be false)
+
+Test Rent Car 2 - With Car already rented
+Test Rent Car 2 - HTTP Status Code: 409 (Must be 409)
+
+Test Rent Car 3 - With Car not exist
+
+2023/11/26 21:08:58 C:/Users/AbdeelBrh/Desktop/IT/Go Lang/backend-go-cars/service/parkingLotService.go:20 record not found
+[0.711ms] [rows:0] SELECT * FROM `cars` WHERE registration = 'RegXXX' AND `cars`.`deleted_at` IS NULL ORDER BY `cars`.`id` LIMIT 1
+Record not found for registration 'RegXXX'
+Test Rent Car 3 - HTTP Status Code: 404 (Must be 404)
+
+------
+Test Return Car - HTTP Status Code: 200 (Must be 200)
+Test Return Car - Car Availability: true (Must be true)
+Test Return Car - Car Mileage: 750.700000 (Must be 750.7)
+
+Test Return Car 2 - With negative kilometers
+Test Return Car 2 - HTTP Status Code: 400 (Must be 400)
+
+Test Return Car 3 - With Car not exist
+
+2023/11/26 21:08:58 C:/Users/AbdeelBrh/Desktop/IT/Go Lang/backend-go-cars/service/parkingLotService.go:20 record not found
+[0.925ms] [rows:0] SELECT * FROM `cars` WHERE registration = 'RegXXX' AND `cars`.`deleted_at` IS NULL ORDER BY `cars`.`id` LIMIT 1
+Record not found for registration 'RegXXX'
+Test Return Car 3 - HTTP Status Code: 404 (Must be 404)
+PASS
+ok      github.com/abdeel07/backend-go-cars/handlers_test       0.501s
