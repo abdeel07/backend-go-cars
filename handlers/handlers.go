@@ -9,11 +9,13 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// CarResponse represents the response structure for car-related operations.
 type CarResponse struct {
 	Message string    `json:"message"`
 	Car     model.Car `json:"car"`
 }
 
+// ListCars handles the GET HTTP request to list all cars.
 func ListCars(s *server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -26,10 +28,12 @@ func ListCars(s *server.Server) http.HandlerFunc {
 	}
 }
 
+// AddCar handles the POST HTTP request to add a new car to the system.
 func AddCar(s *server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
+		// Decode the request body into a model.Car instance.
 		var car model.Car
 		if err := json.NewDecoder(r.Body).Decode(&car); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -37,6 +41,7 @@ func AddCar(s *server.Server) http.HandlerFunc {
 			return
 		}
 
+		// Validate the request parameters.
 		if car.Mileage < 0 {
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(ErrorResponse{"Mileage parameter must be positive"})
@@ -49,15 +54,18 @@ func AddCar(s *server.Server) http.HandlerFunc {
 			return
 		}
 
+		// Check if the car already exists in the system.
 		exists, _ := s.ParkingLotService.IsExist(car.Registration)
 
 		if exists {
+			// Return a not found response if the car is not found.
 			w.WriteHeader(http.StatusConflict)
 			json.NewEncoder(w).Encode(ErrorResponse{"Car already exists"})
 			return
 
 		}
 
+		// Set car availability and create the car in the database.
 		car.Available = true
 		if err := s.ParkingLotService.DB.Create(&car).Error; err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -70,29 +78,37 @@ func AddCar(s *server.Server) http.HandlerFunc {
 	}
 }
 
+// RentCar handles the PUT HTTP request to rent a car.
 func RentCar(s *server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+
+		// Extract registration parameter from the request.
 		params := mux.Vars(r)
 		registration := params["registration"]
 
+		// Check if the specified car exists in the system.
 		exists, car := s.ParkingLotService.IsExist(registration)
 
 		if !exists {
+			// Return a not found response if the car is not found.
 			w.WriteHeader(http.StatusNotFound)
 			json.NewEncoder(w).Encode(ErrorResponse{"Car not found"})
 			return
 		}
 
+		// Check if the car is available for rent.
 		if !car.Available {
 			w.WriteHeader(http.StatusConflict)
 			json.NewEncoder(w).Encode(ErrorResponse{"Car is not available"})
 			return
 		}
 
+		// Set car availability to false and save the changes in the database.
 		car.Available = false
 		s.ParkingLotService.DB.Save(&car)
 
+		// Create a response indicating the successful rental of the car.
 		response := CarResponse{
 			Message: "The Car with registration " + registration + " is rented!",
 			Car:     car,
@@ -103,16 +119,21 @@ func RentCar(s *server.Server) http.HandlerFunc {
 	}
 }
 
+// ReturnCar handles the PUT HTTP request to return a rented car.
 func ReturnCar(s *server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+
+		// Extract registration parameter from the request.
 		params := mux.Vars(r)
 		registration := params["registration"]
 
+		// Define a structure to hold the payload for kilometers returned.
 		type KilometersPayload struct {
 			Kilometers float64 `json:"kilometers"`
 		}
 
+		// Decode the request body into the KilometersPayload structure.
 		var payload KilometersPayload
 		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -120,30 +141,37 @@ func ReturnCar(s *server.Server) http.HandlerFunc {
 			return
 
 		}
+
+		// Validate that the returned kilometers value is non-negative.
 		if payload.Kilometers < 0 {
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(ErrorResponse{"Kilometers parameter must be positive"})
 			return
 		}
 
+		// Check if the specified car exists in the system.
 		exists, car := s.ParkingLotService.IsExist(registration)
 
 		if !exists {
+			// Return a not found response if the car is not found.
 			w.WriteHeader(http.StatusNotFound)
 			json.NewEncoder(w).Encode(ErrorResponse{"Car not found"})
 			return
 		}
 
+		// Check if the car is currently available (should not be available for return).
 		if car.Available {
 			w.WriteHeader(http.StatusConflict)
 			json.NewEncoder(w).Encode(ErrorResponse{"Car is already available"})
 			return
 		}
 
+		// Update the car availability, increase the mileage, and save changes in the database.
 		car.Available = true
 		car.Mileage += float64(payload.Kilometers)
 		s.ParkingLotService.DB.Save(&car)
 
+		// Create a response indicating the successful return of the car.
 		response := CarResponse{
 			Message: "The Car with registration " + registration + " is returned!",
 			Car:     car,
@@ -154,15 +182,20 @@ func ReturnCar(s *server.Server) http.HandlerFunc {
 	}
 }
 
+// GetCar handles the GET HTTP request to get details of a specific car.
 func GetCar(s *server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+
+		// Extract registration parameter from the request.
 		params := mux.Vars(r)
 		registration := params["registration"]
 
+		// Check if the specified car exists in the system.
 		exists, car := s.ParkingLotService.IsExist(registration)
 
 		if !exists {
+			// Return a not found response if the car is not found.
 			w.WriteHeader(http.StatusNotFound)
 			json.NewEncoder(w).Encode(ErrorResponse{"Car not found"})
 			return
@@ -173,20 +206,26 @@ func GetCar(s *server.Server) http.HandlerFunc {
 	}
 }
 
+// DeleteCar handles the DELETE HTTP request to delete a specific car from the system.
 func DeleteCar(s *server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+
+		// Extract registration parameter from the request.
 		params := mux.Vars(r)
 		registration := params["registration"]
 
+		// Check if the specified car exists in the system.
 		exists, car := s.ParkingLotService.IsExist(registration)
 
 		if !exists {
+			// Return a not found response if the car is not found.
 			w.WriteHeader(http.StatusNotFound)
 			json.NewEncoder(w).Encode(ErrorResponse{"Car not found"})
 			return
 		}
 
+		// Delete the car from the database.
 		s.ParkingLotService.DB.Delete(&car)
 
 		w.WriteHeader(http.StatusNoContent)
